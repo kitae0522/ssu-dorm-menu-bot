@@ -1,0 +1,46 @@
+name: Send daily menu
+
+on:
+  schedule:
+    # Daily 05:55 KST. The job waits until exactly 06:00 KST.
+    - cron: "55 20 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Optional KST date to send, YYYY-MM-DD"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test ./...
+
+      - name: Wait until 06:00 KST
+        if: github.event_name == 'schedule'
+        run: scripts/wait-until-kst.sh 06:00
+
+      - name: Send menu
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MENU_JSON_PATH: data/menus.json
+          DISPATCH_DATE: ${{ inputs.date }}
+        run: |
+          args=()
+          if [[ -n "${DISPATCH_DATE}" ]]; then
+            args+=("-date" "${DISPATCH_DATE}")
+          fi
+          go run ./cmd/send-daily "${args[@]}"

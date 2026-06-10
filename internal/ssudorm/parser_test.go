@@ -64,3 +64,38 @@ func TestParseHTMLExtractsWeeklyMenuTable(t *testing.T) {
 		t.Fatalf("first late-night = %#v, want empty", first.Meals.LateNight)
 	}
 }
+
+func TestParseHTMLRejectsWeekWithNoLunchOrDinner(t *testing.T) {
+	fetchedAt := time.Date(2026, 6, 8, 3, 0, 0, 0, time.FixedZone("KST", 9*60*60))
+	html := `
+<html>
+  <body>
+    <table class="boxstyle02">
+      <tbody>
+        <tr>
+          <th><a href="javascript:viewContent('2026-06-08');">2026-06-08 (월)</a></th>
+          <td>미운영</td>
+          <td></td>
+          <td></td>
+          <td class="end"></td>
+        </tr>
+        <tr>
+          <th><a href="javascript:viewContent('2026-06-09');">2026-06-09 (화)</a></th>
+          <td>미운영</td>
+          <td></td>
+          <td></td>
+          <td class="end"></td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>`
+
+	_, err := ParseHTML(strings.NewReader(html), "https://example.com/source", fetchedAt)
+	if err == nil {
+		t.Fatal("ParseHTML returned nil error, want no meal items error")
+	}
+	if !strings.Contains(err.Error(), "no lunch or dinner items found") {
+		t.Fatalf("error = %q, want no lunch or dinner items found", err)
+	}
+}

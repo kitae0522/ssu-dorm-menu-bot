@@ -94,6 +94,9 @@ func ParseHTML(r io.Reader, sourceURL string, fetchedAt time.Time) (menu.Store, 
 	if len(days) == 0 {
 		return menu.Store{}, fmt.Errorf("no menu rows found")
 	}
+	if !hasLunchOrDinnerItems(days) {
+		return menu.Store{}, fmt.Errorf("no lunch or dinner items found in menu rows")
+	}
 
 	return menu.Store{
 		SourceURL: sourceURL,
@@ -101,6 +104,15 @@ func ParseHTML(r io.Reader, sourceURL string, fetchedAt time.Time) (menu.Store, 
 		WeekStart: days[0].Date,
 		Days:      days,
 	}, nil
+}
+
+func hasLunchOrDinnerItems(days []menu.Day) bool {
+	for _, day := range days {
+		if len(day.Meals.Lunch) > 0 || len(day.Meals.Dinner) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func findFoodTable(n *html.Node) *html.Node {

@@ -15,7 +15,7 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-const DefaultSourceURL = "https://ssudorm.ssu.ac.kr/SShostel/mall_main.php?viewform=B0001_foodboard_list&board_no=1"
+const sourceURLBase = "https://ssudorm.ssu.ac.kr/SShostel/mall_main.php"
 
 var datePattern = regexp.MustCompile(`(\d{4}-\d{2}-\d{2})\s*\(([^)]+)\)`)
 
@@ -24,7 +24,7 @@ func FetchAndParse(ctx context.Context, client *http.Client, sourceURL string, f
 		client = http.DefaultClient
 	}
 	if sourceURL == "" {
-		sourceURL = DefaultSourceURL
+		sourceURL = SourceURLForDate(fetchedAt)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, sourceURL, nil)
@@ -54,6 +54,15 @@ func FetchAndParse(ctx context.Context, client *http.Client, sourceURL string, f
 	}
 
 	return ParseHTML(bytes.NewReader(decoded), sourceURL, fetchedAt)
+}
+
+func SourceURLForDate(t time.Time) string {
+	loc, err := time.LoadLocation(menu.KSTLocation)
+	if err != nil {
+		loc = time.FixedZone("KST", 9*60*60)
+	}
+	kst := t.In(loc)
+	return fmt.Sprintf("%s?viewform=B0001_foodboard_list&gyear=%04d&gmonth=%02d&gday=%02d", sourceURLBase, kst.Year(), kst.Month(), kst.Day())
 }
 
 func ParseHTML(r io.Reader, sourceURL string, fetchedAt time.Time) (menu.Store, error) {

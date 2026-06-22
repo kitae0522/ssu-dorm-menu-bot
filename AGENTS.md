@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This Go project runs only on GitHub Actions; do not add an external server or daemon. It crawls `https://ssudorm.ssu.ac.kr/SShostel/mall_main.php?viewform=B0001_foodboard_list&board_no=1` every Monday at 03:00 KST, saves weekly menu JSON, commits and pushes `data/menus.json`, then sends the matching daily menu through Telegram at 06:00 KST. Keep executables under `cmd/`: `cmd/crawl-weekly` for refresh and `cmd/send-daily` for delivery. Put reusable code under `internal/`, such as `internal/ssudorm`, `internal/menu`, and `internal/telegram`. Keep fixtures under `testdata/`.
+This Go project runs only on GitHub Actions; do not add an external server or daemon. It crawls `https://ssudorm.ssu.ac.kr/SShostel/mall_main.php?viewform=B0001_foodboard_list&gyear=YYYY&gmonth=MM&gday=DD` every Monday at 06:00 KST, saves weekly menu JSON, commits and pushes `data/menus.json`, then sends the matching daily menu through Telegram at 07:00 KST. Keep executables under `cmd/`: `cmd/crawl-weekly` for refresh and `cmd/send-daily` for delivery. Put reusable code under `internal/`, such as `internal/ssudorm`, `internal/menu`, and `internal/telegram`. Keep fixtures under `testdata/`.
 
 ## Build, Test, and Development Commands
 
@@ -23,7 +23,7 @@ Use Go's `testing` package, `httptest` for crawler and Telegram API behavior, an
 
 ## GitHub Actions Operations
 
-Keep workflows under `.github/workflows/`. Target times are KST: weekly crawl Monday 03:00 and daily send 06:00. Because GitHub cron is UTC-only, use `55 17 * * 0` for the crawl and `55 20 * * *` for delivery, then wait in-job until the exact KST time. The crawl commits/pushes `data/menus.json` only when changed. Use `permissions: contents: write`, a bot commit identity, and `workflow_dispatch` for manual recovery.
+Keep workflows under `.github/workflows/`. Target times are KST: weekly crawl Monday 06:00 and daily send 07:00. Because GitHub cron is UTC-only, use `55 20 * * 0` for the crawl and `55 21 * * *` for delivery, then wait in-job until the exact KST time. The crawl commits/pushes `data/menus.json` only when changed. Use `permissions: contents: write`, a bot commit identity, and `workflow_dispatch` for manual recovery.
 
 ## Commit & Pull Request Guidelines
 

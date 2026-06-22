@@ -1,6 +1,10 @@
 package ssudorm
 
 import (
+	"bytes"
+	"context"
+	"io"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -98,4 +102,37 @@ func TestParseHTMLRejectsWeekWithNoLunchOrDinner(t *testing.T) {
 	if !strings.Contains(err.Error(), "no lunch or dinner items found") {
 		t.Fatalf("error = %q, want no lunch or dinner items found", err)
 	}
+}
+
+func TestFetchAndParseDefaultsToFetchedKSTDateURL(t *testing.T) {
+	fetchedAt := time.Date(2026, 6, 21, 18, 0, 0, 0, time.UTC)
+	var gotURL string
+	client := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			gotURL = req.URL.String()
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     make(http.Header),
+				Body:       io.NopCloser(bytes.NewBufferString(sampleFoodTable)),
+				Request:    req,
+			}, nil
+		}),
+	}
+
+	_, err := FetchAndParse(context.Background(), client, "", fetchedAt)
+	if err != nil {
+		t.Fatalf("FetchAndParse returned error: %v", err)
+	}
+
+	wantURL := "https://ssudorm.ssu.ac.kr/SShostel/mall_main.php?viewform=B0001_foodboard_list&gyear=2026&gmonth=06&gday=22"
+	if gotURL != wantURL {
+		t.Fatalf("request URL = %q, want %q", gotURL, wantURL)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
 }

@@ -29,7 +29,7 @@ func run(args []string, out io.Writer) error {
 	flags.SetOutput(io.Discard)
 
 	output := flags.String("output", envOrDefault("MENU_JSON_PATH", defaultMenuPath), "path to write menu JSON")
-	sourceURL := flags.String("url", ssudorm.DefaultSourceURL, "SSU dorm cafeteria menu URL")
+	sourceURL := flags.String("url", "", "SSU dorm cafeteria menu URL override")
 	notify := flags.Bool("notify", false, "send crawl status to Telegram")
 	timeout := flags.Duration("timeout", 30*time.Second, "HTTP request timeout")
 	if err := flags.Parse(args); err != nil {
@@ -39,11 +39,17 @@ func run(args []string, out io.Writer) error {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
+	fetchedAt := time.Now()
+	resolvedSourceURL := *sourceURL
+	if resolvedSourceURL == "" {
+		resolvedSourceURL = ssudorm.SourceURLForDate(fetchedAt)
+	}
+
 	client := &http.Client{Timeout: *timeout}
-	store, err := ssudorm.FetchAndParse(ctx, client, *sourceURL, time.Now())
+	store, err := ssudorm.FetchAndParse(ctx, client, resolvedSourceURL, fetchedAt)
 	if err != nil {
 		if *notify {
-			if notifyErr := sendNotification(message.CrawlFailure(time.Now(), *sourceURL, err.Error()), *timeout); notifyErr != nil {
+			if notifyErr := sendNotification(message.CrawlFailure(time.Now(), resolvedSourceURL, err.Error()), *timeout); notifyErr != nil {
 				return fmt.Errorf("%w; additionally failed to send crawl failure notification: %v", err, notifyErr)
 			}
 		}
@@ -51,7 +57,7 @@ func run(args []string, out io.Writer) error {
 	}
 	if err := menu.Save(*output, store); err != nil {
 		if *notify {
-			if notifyErr := sendNotification(message.CrawlFailure(time.Now(), *sourceURL, err.Error()), *timeout); notifyErr != nil {
+			if notifyErr := sendNotification(message.CrawlFailure(time.Now(), resolvedSourceURL, err.Error()), *timeout); notifyErr != nil {
 				return fmt.Errorf("%w; additionally failed to send crawl failure notification: %v", err, notifyErr)
 			}
 		}

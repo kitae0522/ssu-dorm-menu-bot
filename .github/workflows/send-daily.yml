@@ -2,8 +2,8 @@ name: Send daily menu
 
 on:
   schedule:
-    # Daily 05:55 KST. The job waits until exactly 06:00 KST.
-    - cron: "55 20 * * *"
+    # Daily 06:55 KST. The job waits until exactly 07:00 KST.
+    - cron: "55 21 * * *"
   workflow_dispatch:
     inputs:
       date:
@@ -28,9 +28,9 @@ jobs:
       - name: Test
         run: go test ./...
 
-      - name: Wait until 06:00 KST
+      - name: Wait until 07:00 KST
         if: github.event_name == 'schedule'
-        run: scripts/wait-until-kst.sh 06:00
+        run: scripts/wait-until-kst.sh 07:00
 
       - name: Send menu
         env:

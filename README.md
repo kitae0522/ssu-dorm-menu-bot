@@ -4,14 +4,14 @@ GitHub Actions based Go automation for Soongsil University dorm cafeteria menus.
 
 ## What It Does
 
-- Every Monday at 03:00 KST, crawl the dorm cafeteria menu page, commit `data/menus.json`, and notify Telegram with crawl success or failure.
-- Every day at 06:00 KST, read `data/menus.json` and send that date's lunch and dinner through Telegram.
+- Every Monday at 06:00 KST, crawl the dorm cafeteria menu page, commit `data/menus.json`, and notify Telegram with crawl success or failure.
+- Every day at 07:00 KST, read `data/menus.json` and send that date's lunch and dinner through Telegram.
 - Run without any external server or always-on process.
 
-Source URL:
+Source URL format:
 
 ```text
-https://ssudorm.ssu.ac.kr/SShostel/mall_main.php?viewform=B0001_foodboard_list&board_no=1
+https://ssudorm.ssu.ac.kr/SShostel/mall_main.php?viewform=B0001_foodboard_list&gyear=YYYY&gmonth=MM&gday=DD
 ```
 
 ## Local Commands

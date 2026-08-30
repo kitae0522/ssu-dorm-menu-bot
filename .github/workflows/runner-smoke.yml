@@ -1,0 +1,31 @@
+name: Runner smoke test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: [self-hosted, lab, linux, x64]
+    container: ubuntu:24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Verify Ubuntu job container
+        run: |
+          source /etc/os-release
+          test "$ID" = "ubuntu"
+          printf 'container=%s %s\n' "$NAME" "$VERSION_ID"
+
+      - name: Test
+        run: go test ./...

@@ -23,7 +23,7 @@ Use Go's `testing` package, `httptest` for crawler and Telegram API behavior, an
 
 ## GitHub Actions Operations
 
-Keep workflows under `.github/workflows/`. Target times are KST: weekly crawl Monday 06:00 and daily send 07:00. Because GitHub cron is UTC-only, use `55 20 * * 0` for the crawl and `55 21 * * *` for delivery, then wait in-job until the exact KST time. The crawl commits/pushes `data/menus.json` only when changed. Use `permissions: contents: write`, a bot commit identity, and `workflow_dispatch` for manual recovery.
+Keep workflows under `.github/workflows/`. Run jobs on GitHub-hosted `ubuntu-latest`, not self-hosted lab runners. Target times are KST: weekly crawl Monday 06:00 and daily send 07:00. Because GitHub cron is UTC-only, use `55 20 * * 0` for the crawl and `55 21 * * *` for delivery, then wait in-job until the exact KST time. The crawl commits/pushes `data/menus.json` only when changed. Use `permissions: contents: write`, a bot commit identity, and `workflow_dispatch` for manual recovery.
 
 ## Commit & Pull Request Guidelines
 

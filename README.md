@@ -2,6 +2,8 @@
 
 GitHub Actions based Go automation for Soongsil University dorm cafeteria menus.
 
+Scheduled jobs run on GitHub-hosted `ubuntu-latest` runners. This repository does not use self-hosted lab runners.
+
 ## What It Does
 
 - Every Monday at 06:00 KST, crawl the dorm cafeteria menu page, commit `data/menus.json`, and notify Telegram with crawl success or failure.

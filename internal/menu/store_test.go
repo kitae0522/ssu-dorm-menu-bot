@@ -23,6 +23,45 @@ func TestFindDayUsesKSTDate(t *testing.T) {
 	}
 }
 
+func TestSameMenuIgnoresFetchedAtAndSourceURL(t *testing.T) {
+	base := Store{
+		SourceURL: "https://example.com/a",
+		FetchedAt: "2026-09-07T06:00:00+09:00",
+		WeekStart: "2026-09-07",
+		Days: []Day{{
+			Date:    "2026-09-07",
+			Weekday: "월",
+			Meals:   Meals{Lunch: []string{"김치찌개"}},
+		}},
+	}
+	other := Store{
+		SourceURL: "https://example.com/b",
+		FetchedAt: "2026-09-07T10:00:00+09:00",
+		WeekStart: "2026-09-07",
+		Days: []Day{{
+			Date:    "2026-09-07",
+			Weekday: "월",
+			Meals:   Meals{Lunch: []string{"김치찌개"}},
+		}},
+	}
+	if !SameMenu(base, other) {
+		t.Fatal("expected SameMenu to ignore source URL and fetched_at")
+	}
+
+	other.Days[0].Meals.Lunch = []string{"된장찌개"}
+	if SameMenu(base, other) {
+		t.Fatal("expected SameMenu to be false when lunch items change")
+	}
+
+	emptyLateNight := base
+	emptyLateNight.Days = append([]Day(nil), base.Days...)
+	emptyLateNight.Days[0].Meals.LateNight = []string{}
+	base.Days[0].Meals.LateNight = nil
+	if !SameMenu(base, emptyLateNight) {
+		t.Fatal("expected SameMenu to treat nil and empty late-night slices as equal")
+	}
+}
+
 func TestSaveAndLoadRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "nested", "menus.json")
 	want := Store{

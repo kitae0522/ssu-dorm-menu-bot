@@ -60,6 +60,38 @@ func Save(path string, store Store) error {
 	return os.Rename(tmp, path)
 }
 
+func SameMenu(a, b Store) bool {
+	if a.WeekStart != b.WeekStart || len(a.Days) != len(b.Days) {
+		return false
+	}
+	for i := range a.Days {
+		if !sameDay(a.Days[i], b.Days[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func sameDay(a, b Day) bool {
+	return a.Date == b.Date && a.Weekday == b.Weekday &&
+		sameItems(a.Meals.Breakfast, b.Meals.Breakfast) &&
+		sameItems(a.Meals.Lunch, b.Meals.Lunch) &&
+		sameItems(a.Meals.Dinner, b.Meals.Dinner) &&
+		sameItems(a.Meals.LateNight, b.Meals.LateNight)
+}
+
+func sameItems(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func FindDay(store Store, at time.Time) (Day, bool) {
 	date := KSTDate(at)
 	for _, day := range store.Days {

@@ -2,9 +2,19 @@ name: Crawl weekly menu
 
 on:
   schedule:
-    # Monday 05:55 KST. The job waits until exactly 06:00 KST.
+    # Monday 06:00 KST. Keep an early attempt so the 07:00 daily send can
+    # use this week's menu when the cafeteria has already posted it.
     - cron: "55 20 * * 0"
+    # Later Monday retries. The 06:00 crawl often sees an empty table
+    # because the weekly menu is posted later in the morning.
+    - cron: "55 0 * * 1"
+    - cron: "55 2 * * 1"
+    - cron: "55 5 * * 1"
   workflow_dispatch:
+
+concurrency:
+  group: crawl-weekly
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -26,9 +36,19 @@ jobs:
       - name: Test
         run: go test ./...
 
-      - name: Wait until 06:00 KST
+      - name: Wait until scheduled KST time
         if: github.event_name == 'schedule'
-        run: scripts/wait-until-kst.sh 06:00
+        run: |
+          case "${{ github.event.schedule }}" in
+            "55 20 * * 0") scripts/wait-until-kst.sh 06:00 ;;
+            "55 0 * * 1") scripts/wait-until-kst.sh 10:00 ;;
+            "55 2 * * 1") scripts/wait-until-kst.sh 12:00 ;;
+            "55 5 * * 1") scripts/wait-until-kst.sh 15:00 ;;
+            *)
+              echo "unknown schedule: ${{ github.event.schedule }}"
+              exit 1
+              ;;
+          esac
 
       - name: Crawl weekly menu
         env:

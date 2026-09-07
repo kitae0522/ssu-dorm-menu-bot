@@ -55,6 +55,10 @@ func run(args []string, out io.Writer) error {
 		}
 		return err
 	}
+	if existing, loadErr := menu.Load(*output); loadErr == nil && menu.SameMenu(existing, store) {
+		fmt.Fprintf(out, "no menu changes; skipped write to %s\n", *output)
+		return nil
+	}
 	if err := menu.Save(*output, store); err != nil {
 		if *notify {
 			if notifyErr := sendNotification(message.CrawlFailure(time.Now(), resolvedSourceURL, err.Error()), *timeout); notifyErr != nil {

@@ -6,7 +6,7 @@ Scheduled jobs run on GitHub-hosted `ubuntu-latest` runners. This repository doe
 
 ## What It Does
 
-- Every Monday at 06:00 KST, crawl the dorm cafeteria menu page, commit `data/menus.json`, and notify Telegram with crawl success or failure.
+- Every Monday, crawl the dorm cafeteria menu page, commit `data/menus.json`, and notify Telegram with crawl success or failure. The first attempt is 06:00 KST so the 07:00 daily send can use this week's menu when it is already posted. Extra attempts at 10:00, 12:00, and 15:00 KST retry if the cafeteria table is still empty.
 - Every day at 07:00 KST, read `data/menus.json` and send that date's lunch and dinner through Telegram.
 - Run without any external server or always-on process.
 
@@ -63,4 +63,4 @@ Set these repository secrets before enabling the daily send workflow:
 
 ## Schedule Notes
 
-GitHub Actions cron uses UTC. Workflows start five minutes before the target KST time, then `scripts/wait-until-kst.sh` waits until the exact KST target.
+GitHub Actions cron uses UTC. Each crawl starts five minutes before its target KST time, then `scripts/wait-until-kst.sh` waits until that exact KST time. The weekly crawl also reruns later on Monday because the cafeteria often posts lunch and dinner after 06:00 KST. Unchanged menus are not rewritten, so later retries do not create extra commits or Telegram success messages.

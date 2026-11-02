@@ -21,8 +21,18 @@ const sourceURLBase = "https://ssudorm.ssu.ac.kr/SShostel/mall_main.php"
 var datePattern = regexp.MustCompile(`(\d{4}-\d{2}-\d{2})\s*\(([^)]+)\)`)
 
 // ErrSourceBlocked reports that the board answered with the hosting provider's
-// maintenance page instead of the menu table.
+// maintenance page instead of the menu table. The board serves that page to
+// datacenter IPs, so GitHub-hosted runners receive it while Korean residential
+// lines still get the real table.
 var ErrSourceBlocked = errors.New("dorm site served its hosting maintenance page instead of the menu board")
+
+// maintenanceMarkers identify the hosting provider's placeholder page. The image
+// path is ASCII-only so a mis-decoded body is still detected.
+var maintenanceMarkers = []string{
+	"업데이트 준비중",
+	"솔루션의 강국",
+	"/images/error/not-found.gif",
+}
 
 func FetchAndParse(ctx context.Context, client *http.Client, sourceURL string, fetchedAt time.Time) (menu.Store, error) {
 	if client == nil {
@@ -71,7 +81,15 @@ func SourceURLForDate(t time.Time) string {
 }
 
 func ParseHTML(r io.Reader, sourceURL string, fetchedAt time.Time) (menu.Store, error) {
-	doc, err := html.Parse(r)
+	body, err := io.ReadAll(r)
+	if err != nil {
+		return menu.Store{}, err
+	}
+	if marker := maintenanceMarker(body); marker != "" {
+		return menu.Store{}, fmt.Errorf("%w: %d-byte page contains %q", ErrSourceBlocked, len(body), marker)
+	}
+
+	doc, err := html.Parse(bytes.NewReader(body))
 	if err != nil {
 		return menu.Store{}, err
 	}
@@ -127,6 +145,15 @@ func hasLunchOrDinnerItems(days []menu.Day) bool {
 		}
 	}
 	return false
+}
+
+func maintenanceMarker(body []byte) string {
+	for _, marker := range maintenanceMarkers {
+		if bytes.Contains(body, []byte(marker)) {
+			return marker
+		}
+	}
+	return ""
 }
 
 func findFoodTable(n *html.Node) *html.Node {

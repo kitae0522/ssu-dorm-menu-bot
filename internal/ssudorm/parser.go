@@ -3,6 +3,7 @@ package ssudorm
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,6 +19,10 @@ import (
 const sourceURLBase = "https://ssudorm.ssu.ac.kr/SShostel/mall_main.php"
 
 var datePattern = regexp.MustCompile(`(\d{4}-\d{2}-\d{2})\s*\(([^)]+)\)`)
+
+// ErrSourceBlocked reports that the board answered with the hosting provider's
+// maintenance page instead of the menu table.
+var ErrSourceBlocked = errors.New("dorm site served its hosting maintenance page instead of the menu board")
 
 func FetchAndParse(ctx context.Context, client *http.Client, sourceURL string, fetchedAt time.Time) (menu.Store, error) {
 	if client == nil {

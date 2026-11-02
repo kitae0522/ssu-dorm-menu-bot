@@ -3,8 +3,10 @@ package ssudorm
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -101,6 +103,43 @@ func TestParseHTMLRejectsWeekWithNoLunchOrDinner(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "no lunch or dinner items found") {
 		t.Fatalf("error = %q, want no lunch or dinner items found", err)
+	}
+}
+
+func TestParseHTMLRejectsHostingMaintenancePage(t *testing.T) {
+	// testdata/maintenance_page.html is the byte-for-byte body a GitHub-hosted
+	// runner received: the hosting provider's placeholder page, HTTP 200.
+	body, err := os.ReadFile("../../testdata/maintenance_page.html")
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+
+	_, err = ParseHTML(bytes.NewReader(body), "https://example.test/menu", time.Date(2026, 11, 2, 3, 58, 0, 0, time.UTC))
+	if !errors.Is(err, ErrSourceBlocked) {
+		t.Fatalf("ParseHTML error = %v, want ErrSourceBlocked", err)
+	}
+}
+
+func TestFetchAndParseRejectsHostingMaintenancePage(t *testing.T) {
+	body, err := os.ReadFile("../../testdata/maintenance_page.html")
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	client := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Status:     "200 OK",
+				Header:     http.Header{"Content-Type": []string{"text/html; charset=EUC-KR"}},
+				Body:       io.NopCloser(bytes.NewReader(body)),
+				Request:    req,
+			}, nil
+		}),
+	}
+
+	_, err = FetchAndParse(context.Background(), client, "", time.Date(2026, 11, 2, 3, 58, 0, 0, time.UTC))
+	if !errors.Is(err, ErrSourceBlocked) {
+		t.Fatalf("FetchAndParse error = %v, want ErrSourceBlocked", err)
 	}
 }
 
